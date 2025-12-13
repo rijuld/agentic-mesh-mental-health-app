@@ -54,10 +54,10 @@ export const RoleGateScreen: React.FC<RoleGateScreenProps> = ({ navigation }) =>
 
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <Ionicons name="anchor" size={48} color={colors.primary} />
+          <Ionicons name="flower-outline" size={48} color={colors.primary} />
         </View>
-        <Text style={styles.appName}>Anchor</Text>
-        <Text style={styles.tagline}>Your digital safety blanket</Text>
+        <Text style={styles.appName}>Sukoon</Text>
+        <Text style={styles.tagline}>Find your calm within</Text>
       </View>
 
       <View style={styles.content}>

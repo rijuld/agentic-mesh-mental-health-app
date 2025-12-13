@@ -12,6 +12,55 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+const requireAdmin = (req, res, next) => {
+  const token = req.header('x-admin-token');
+  if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+};
+
+const COLLECTIONS_TO_WIPE = [
+  'users',
+  'mood_logs',
+  'safety_contracts',
+  'connection_requests',
+  'linked_accounts',
+];
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
+
+app.post('/admin/wipe', requireAdmin, async (req, res) => {
+  try {
+    const results = {};
+    for (const name of COLLECTIONS_TO_WIPE) {
+      const model = getModel(name);
+      const result = await model.deleteMany({});
+      results[name] = result.deletedCount;
+    }
+    res.json({ ok: true, deleted: results });
+  } catch (error) {
+    console.error('wipe error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/stats', requireAdmin, async (req, res) => {
+  try {
+    const counts = {};
+    for (const name of COLLECTIONS_TO_WIPE) {
+      const model = getModel(name);
+      counts[name] = await model.estimatedDocumentCount();
+    }
+    res.json({ ok: true, counts });
+  } catch (error) {
+    console.error('stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Generic Data API Facade
 // This assumes the frontend sends body: { collection, database, dataSource, filter, document, update, ... }
 // We only care about 'collection' and the action parameters.
@@ -114,4 +163,18 @@ function parseFilter(filter) {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Backend facade listening on port ${PORT}`);
+});
+
+mongoose.connection.once('open', async () => {
+  if (process.env.WIPE_ON_START === 'true') {
+    try {
+      for (const name of COLLECTIONS_TO_WIPE) {
+        const model = getModel(name);
+        await model.deleteMany({});
+      }
+      console.log('WIPE_ON_START enabled: collections wiped');
+    } catch (error) {
+      console.error('WIPE_ON_START wipe failed:', error);
+    }
+  }
 });

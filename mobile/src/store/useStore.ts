@@ -4,11 +4,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserRole, MoodLog, SafetyContract, ShareSettings, PatientStatus, ChatMessage } from '../types';
 import { databaseService } from '../services/databaseService';
 
+interface ConnectionRequest {
+  id: string;
+  fromUserId: string;
+  fromUserRole: string;
+  fromUserName?: string;
+  status: string;
+}
+
 interface AppState {
   user: User | null;
   isAuthenticated: boolean;
   selectedRole: UserRole | null;
-  anchorCode: string | null;
   
   currentMood: number;
   moodLogs: MoodLog[];
@@ -18,7 +25,8 @@ interface AppState {
   shareSettings: ShareSettings;
   
   linkedPatientStatus: PatientStatus | null;
-  linkedAccounts: Array<{ id: string; role: string }>;
+  linkedAccounts: Array<{ id: string; role: string; name?: string }>;
+  connectionRequests: ConnectionRequest[];
   
   chatHistory: ChatMessage[];
   
@@ -35,10 +43,12 @@ interface AppState {
   
   registerUser: (email: string, name: string, role: UserRole) => Promise<boolean>;
   loginUser: (email: string) => Promise<boolean>;
-  generateAnchorCode: () => Promise<string | null>;
-  linkWithAnchorCode: (code: string) => Promise<boolean>;
   saveMoodToDatabase: (mood: number, note?: string) => Promise<void>;
   loadLinkedAccounts: () => Promise<void>;
+  loadConnectionRequests: () => Promise<void>;
+  sendConnectionRequest: (toUserId: string, toUserRole: string) => Promise<boolean>;
+  acceptConnectionRequest: (requestId: string, fromUserId: string) => Promise<boolean>;
+  rejectConnectionRequest: (requestId: string) => Promise<boolean>;
 }
 
 export const useStore = create<AppState>()(
@@ -47,7 +57,7 @@ export const useStore = create<AppState>()(
       user: null,
       isAuthenticated: false,
       selectedRole: null,
-      anchorCode: null,
+      connectionRequests: [],
       
       currentMood: 5,
       moodLogs: [],
@@ -94,9 +104,9 @@ export const useStore = create<AppState>()(
         user: null,
         isAuthenticated: false,
         selectedRole: null,
-        anchorCode: null,
         chatHistory: [],
         linkedAccounts: [],
+        connectionRequests: [],
       }),
 
       registerUser: async (email, name, role) => {
@@ -109,7 +119,7 @@ export const useStore = create<AppState>()(
           
           if (userId) {
             set({
-              user: { id: userId, email, name, role },
+              user: { id: userId, email, name, role, createdAt: new Date().toISOString() },
               isAuthenticated: true,
               selectedRole: role,
             });
@@ -140,37 +150,65 @@ export const useStore = create<AppState>()(
         }
       },
 
-      generateAnchorCode: async () => {
+      loadConnectionRequests: async () => {
         const { user } = get();
-        if (!user?.id) return null;
+        if (!user?.id) return;
         
         try {
-          const code = await databaseService.generateAnchorCode(user.id);
-          set({ anchorCode: code });
-          return code;
+          const requests = await databaseService.getConnectionRequests(user.id);
+          set({ connectionRequests: requests });
         } catch (error) {
-          console.error('Error generating anchor code:', error);
-          return null;
+          console.error('Error loading connection requests:', error);
         }
       },
 
-      linkWithAnchorCode: async (code) => {
+      sendConnectionRequest: async (toUserId: string, toUserRole: string) => {
         const { user } = get();
-        if (!user?.id || user.role === 'patient') return false;
+        if (!user?.id) return false;
         
         try {
-          const result = await databaseService.linkAccountWithCode(
-            code,
+          const success = await databaseService.sendConnectionRequest(
             user.id,
-            user.role as 'ally' | 'therapist'
+            user.role,
+            toUserId,
+            toUserRole
           );
-          
-          if (result.success) {
-            await get().loadLinkedAccounts();
-          }
-          return result.success;
+          return success;
         } catch (error) {
-          console.error('Error linking with anchor code:', error);
+          console.error('Error sending connection request:', error);
+          return false;
+        }
+      },
+
+      acceptConnectionRequest: async (requestId: string, fromUserId: string) => {
+        const { user } = get();
+        if (!user?.id) return false;
+        
+        try {
+          const patientId = user.role === 'patient' ? user.id : fromUserId;
+          const therapistId = user.role === 'therapist' ? user.id : fromUserId;
+          
+          const success = await databaseService.acceptConnectionRequest(requestId, patientId, therapistId);
+          if (success) {
+            await get().loadLinkedAccounts();
+            await get().loadConnectionRequests();
+          }
+          return success;
+        } catch (error) {
+          console.error('Error accepting connection request:', error);
+          return false;
+        }
+      },
+
+      rejectConnectionRequest: async (requestId: string) => {
+        try {
+          const success = await databaseService.rejectConnectionRequest(requestId);
+          if (success) {
+            await get().loadConnectionRequests();
+          }
+          return success;
+        } catch (error) {
+          console.error('Error rejecting connection request:', error);
           return false;
         }
       },
@@ -181,6 +219,7 @@ export const useStore = create<AppState>()(
         
         const moodLog: MoodLog = {
           id: Date.now().toString(),
+          userId: user.id,
           level: mood,
           timestamp: new Date().toISOString(),
           note,
@@ -221,6 +260,7 @@ export const useStore = create<AppState>()(
         selectedRole: state.selectedRole,
         shareSettings: state.shareSettings,
         moodLogs: state.moodLogs,
+        linkedAccounts: state.linkedAccounts,
       }),
     }
   )

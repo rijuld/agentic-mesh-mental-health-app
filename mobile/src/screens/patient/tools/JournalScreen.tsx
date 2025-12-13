@@ -23,7 +23,7 @@ interface JournalEntry {
     tags: string[];
 }
 
-const JOURNAL_STORAGE_KEY = 'anchor_journal_entries';
+const JOURNAL_STORAGE_KEY = 'bloom_journal_entries';
 
 const PROMPT_SUGGESTIONS = [
     "What emotions am I feeling right now?",

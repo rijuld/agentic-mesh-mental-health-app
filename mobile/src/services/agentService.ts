@@ -9,13 +9,13 @@ const AGENT_ENDPOINTS = {
   router: 'https://jcjq4yrw6y2ywsllgap457rd.agents.do-ai.run',
 };
 
-// Access keys for each agent
+// Access keys loaded from environment variables
 const AGENT_ACCESS_KEYS = {
-  translator: '1YbHqH2vszbSSpZp4qiHZWXI8JV4CwdL',
-  mentalization: 'u1aNEktdYPHopYQ0rbzGuyd7rT3gvGT1',
-  fpBuffer: 'kmFGeP_SGKol1TNmk_T7rd9eZS5AC9gh',
-  validation: 'GpAZHulmXBbawBGpUPcR6vwEzbNGb39n',
-  router: '3KTvPKrDHTv_dkrb_VwcYd9x-1VEAcSH',
+  translator: process.env.EXPO_PUBLIC_AGENT_KEY_TRANSLATOR || '',
+  mentalization: process.env.EXPO_PUBLIC_AGENT_KEY_MENTALIZATION || '',
+  fpBuffer: process.env.EXPO_PUBLIC_AGENT_KEY_FP_BUFFER || '',
+  validation: process.env.EXPO_PUBLIC_AGENT_KEY_VALIDATION || '',
+  router: process.env.EXPO_PUBLIC_AGENT_KEY_ROUTER || '',
 };
 
 export type AgentType = 

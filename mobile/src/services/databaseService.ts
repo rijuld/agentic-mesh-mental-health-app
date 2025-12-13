@@ -1,14 +1,16 @@
 import { User, MoodLog, SafetyContract, ShareSettings } from '../types';
 
-const MONGODB_API_URL = 'http://localhost:3000';
-const CLUSTER_NAME = 'Cluster0';
-const DATABASE_NAME = 'bpd_recovery';
+// Backend API URL - use your machine's IP for physical device testing
+// For iOS simulator: http://localhost:3000
+// For Android emulator: http://10.0.2.2:3000
+// For physical device: http://<your-machine-ip>:3000
+const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://10.205.1.208:3000';
 
 const COLLECTIONS = {
   users: 'users',
   moodLogs: 'mood_logs',
   safetyContracts: 'safety_contracts',
-  anchorCodes: 'anchor_codes',
+  connectionRequests: 'connection_requests',
   linkedAccounts: 'linked_accounts',
 };
 
@@ -22,43 +24,43 @@ interface MongoDBResponse<T> {
 }
 
 class DatabaseService {
-  private apiKey: string = '';
-
-  setApiKey(key: string) {
-    this.apiKey = key;
-  }
-
   private async makeRequest<T>(
     action: string,
     collection: string,
     data: Record<string, unknown>
   ): Promise<MongoDBResponse<T>> {
-    const response = await fetch(`${MONGODB_API_URL}/action/${action}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dataSource: CLUSTER_NAME,
-        database: DATABASE_NAME,
-        collection,
-        ...data,
-      }),
-    });
-
-    return await response.json();
+    try {
+      const response = await fetch(`${API_BASE_URL}/action/${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          collection,
+          ...data,
+        }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error(`API request failed (${action}):`, error);
+      throw error;
+    }
   }
 
   async createUser(user: Omit<User, 'id'>): Promise<string | null> {
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const newUser = {
+      ...user,
+      id: userId,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
       const result = await this.makeRequest<User>('insertOne', COLLECTIONS.users, {
-        document: {
-          ...user,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
+        document: newUser,
       });
-      return result.insertedId || null;
+      console.log('User created in MongoDB:', newUser.name, newUser.role);
+      return result.insertedId ? userId : null;
     } catch (error) {
       console.error('Error creating user:', error);
       return null;
@@ -68,7 +70,7 @@ class DatabaseService {
   async getUserById(userId: string): Promise<User | null> {
     try {
       const result = await this.makeRequest<User>('findOne', COLLECTIONS.users, {
-        filter: { _id: { $oid: userId } },
+        filter: { id: userId },
       });
       return result.document || null;
     } catch (error) {
@@ -92,7 +94,7 @@ class DatabaseService {
   async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
     try {
       const result = await this.makeRequest<User>('updateOne', COLLECTIONS.users, {
-        filter: { _id: { $oid: userId } },
+        filter: { id: userId },
         update: {
           $set: {
             ...updates,
@@ -136,60 +138,110 @@ class DatabaseService {
     }
   }
 
-  async generateAnchorCode(userId: string): Promise<string> {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-
+  async getAllUsersByRole(role: string): Promise<Array<{ id: string; name: string; email: string }>> {
     try {
-      await this.makeRequest('insertOne', COLLECTIONS.anchorCodes, {
-        document: {
-          userId,
-          code,
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        },
+      const result = await this.makeRequest<User>('find', COLLECTIONS.users, {
+        filter: { role },
       });
-      return code;
+      const users = result.documents || [];
+      console.log(`Found ${users.length} ${role}s in MongoDB`);
+      return users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+      }));
     } catch (error) {
-      console.error('Error generating anchor code:', error);
-      return code;
+      console.error('Error getting users by role:', error);
+      return [];
     }
   }
 
-  async linkAccountWithCode(
-    code: string,
-    linkingUserId: string,
-    linkingUserRole: 'ally' | 'therapist'
-  ): Promise<{ success: boolean; patientId?: string }> {
+  async sendConnectionRequest(
+    fromUserId: string,
+    fromUserRole: string,
+    toUserId: string,
+    toUserRole: string
+  ): Promise<boolean> {
+    const request = {
+      id: `req_${Date.now()}`,
+      fromUserId,
+      fromUserRole,
+      toUserId,
+      toUserRole,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      const codeResult = await this.makeRequest<{ userId: string; expiresAt: string }>(
-        'findOne',
-        COLLECTIONS.anchorCodes,
-        { filter: { code } }
-      );
+      await this.makeRequest('insertOne', COLLECTIONS.connectionRequests, {
+        document: request,
+      });
+      console.log('Connection request sent:', fromUserRole, '->', toUserRole);
+      return true;
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      return false;
+    }
+  }
 
-      if (!codeResult.document) {
-        return { success: false };
-      }
+  async getConnectionRequests(userId: string): Promise<Array<{
+    id: string;
+    fromUserId: string;
+    fromUserRole: string;
+    fromUserName?: string;
+    status: string;
+  }>> {
+    try {
+      const result = await this.makeRequest<any>('find', COLLECTIONS.connectionRequests, {
+        filter: { toUserId: userId, status: 'pending' },
+      });
+      return (result.documents || []).map((r: any) => ({
+        id: r.id,
+        fromUserId: r.fromUserId,
+        fromUserRole: r.fromUserRole,
+        status: r.status,
+      }));
+    } catch (error) {
+      console.error('Error getting connection requests:', error);
+      return [];
+    }
+  }
 
-      const { userId: patientId, expiresAt } = codeResult.document;
+  async acceptConnectionRequest(requestId: string, patientId: string, therapistId: string): Promise<boolean> {
+    try {
+      // Update request status
+      await this.makeRequest('updateOne', COLLECTIONS.connectionRequests, {
+        filter: { id: requestId },
+        update: { $set: { status: 'accepted' } },
+      });
 
-      if (new Date(expiresAt) < new Date()) {
-        return { success: false };
-      }
-
+      // Add linked account
       await this.makeRequest('insertOne', COLLECTIONS.linkedAccounts, {
         document: {
           patientId,
-          linkedUserId: linkingUserId,
-          linkedUserRole: linkingUserRole,
+          linkedUserId: therapistId,
+          linkedUserRole: 'therapist',
           createdAt: new Date().toISOString(),
         },
       });
-
-      return { success: true, patientId };
+      console.log('Connection accepted:', patientId, '<->', therapistId);
+      return true;
     } catch (error) {
-      console.error('Error linking account:', error);
-      return { success: false };
+      console.error('Error accepting connection request:', error);
+      return false;
+    }
+  }
+
+  async rejectConnectionRequest(requestId: string): Promise<boolean> {
+    try {
+      await this.makeRequest('updateOne', COLLECTIONS.connectionRequests, {
+        filter: { id: requestId },
+        update: { $set: { status: 'rejected' } },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error rejecting connection request:', error);
+      return false;
     }
   }
 
@@ -199,13 +251,9 @@ class DatabaseService {
         ? { patientId: userId }
         : { linkedUserId: userId };
 
-      const result = await this.makeRequest<{ patientId: string; linkedUserId: string; linkedUserRole: string }>(
-        'find',
-        COLLECTIONS.linkedAccounts,
-        { filter }
-      );
-
-      return (result.documents || []).map(doc => ({
+      const result = await this.makeRequest<any>('find', COLLECTIONS.linkedAccounts, { filter });
+      
+      return (result.documents || []).map((doc: any) => ({
         id: role === 'patient' ? doc.linkedUserId : doc.patientId,
         role: role === 'patient' ? doc.linkedUserRole : 'patient',
       }));

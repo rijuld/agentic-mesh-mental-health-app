@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,13 @@ interface AllyDashboardScreenProps {
 }
 
 export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ navigation }) => {
-  const { linkedPatientStatus, logout } = useStore();
+  const { linkedPatientStatus, logout, linkedAccounts, loadLinkedAccounts } = useStore();
+
+  useEffect(() => {
+    loadLinkedAccounts();
+  }, []);
+
+  const hasLinkedPatient = linkedAccounts.some(acc => acc.role === 'patient');
 
   const handleLogout = () => {
     Alert.alert(
@@ -48,12 +54,12 @@ export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ naviga
     }
   };
 
-  const mockStatus = linkedPatientStatus || {
-    level: 'yellow',
-    label: 'Struggling',
-    lastUpdated: '2 hours ago',
-    moodTrend: [5, 4, 3, 4, 5, 4, 3],
-  };
+  const patientStatus = linkedPatientStatus || (hasLinkedPatient ? {
+    level: 'green' as const,
+    label: 'Stable',
+    lastUpdated: 'Recently',
+    moodTrend: [5, 5, 5, 5, 5, 5, 5],
+  } : null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,47 +69,64 @@ export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ naviga
           <Text style={styles.subtitle}>Monitor and support your loved one</Text>
         </View>
 
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Text style={styles.statusTitle}>Patient Status</Text>
-            <Text style={styles.statusTime}>Updated {mockStatus.lastUpdated}</Text>
-          </View>
-          
-          <View style={styles.statusIndicator}>
-            <View style={[styles.statusLight, { backgroundColor: getStatusColor(mockStatus.level) }]}>
-              <View style={[styles.statusGlow, { backgroundColor: getStatusColor(mockStatus.level) }]} />
+        {patientStatus ? (
+          <View style={styles.statusCard}>
+            <View style={styles.statusHeader}>
+              <Text style={styles.statusTitle}>Patient Status</Text>
+              <Text style={styles.statusTime}>Updated {patientStatus.lastUpdated}</Text>
             </View>
-            <View style={styles.statusInfo}>
-              <Text style={[styles.statusLevel, { color: getStatusColor(mockStatus.level) }]}>
-                {getStatusLabel(mockStatus.level)}
-              </Text>
-              <Text style={styles.statusDescription}>
-                {mockStatus.level === 'green' && 'They are doing well today'}
-                {mockStatus.level === 'yellow' && 'They may need some support'}
-                {mockStatus.level === 'red' && 'Consider reaching out'}
-              </Text>
+            
+            <View style={styles.statusIndicator}>
+              <View style={[styles.statusLight, { backgroundColor: getStatusColor(patientStatus.level) }]}>
+                <View style={[styles.statusGlow, { backgroundColor: getStatusColor(patientStatus.level) }]} />
+              </View>
+              <View style={styles.statusInfo}>
+                <Text style={[styles.statusLevel, { color: getStatusColor(patientStatus.level) }]}>
+                  {getStatusLabel(patientStatus.level)}
+                </Text>
+                <Text style={styles.statusDescription}>
+                  {patientStatus.level === 'green' && 'They are doing well today'}
+                  {patientStatus.level === 'yellow' && 'They may need some support'}
+                  {patientStatus.level === 'red' && 'Consider reaching out'}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.moodTrend}>
-            <Text style={styles.moodTrendLabel}>7-Day Mood Trend</Text>
-            <View style={styles.moodBars}>
-              {mockStatus.moodTrend.map((value: number, index: number) => (
-                <View key={index} style={styles.moodBarContainer}>
-                  <View 
-                    style={[
-                      styles.moodBar, 
-                      { 
-                        height: `${value * 10}%`,
-                        backgroundColor: value <= 3 ? colors.statusRed : value <= 5 ? colors.statusYellow : colors.statusGreen
-                      }
-                    ]} 
-                  />
-                </View>
-              ))}
+            <View style={styles.moodTrend}>
+              <Text style={styles.moodTrendLabel}>7-Day Mood Trend</Text>
+              <View style={styles.moodBars}>
+                {patientStatus.moodTrend.map((value: number, index: number) => (
+                  <View key={index} style={styles.moodBarContainer}>
+                    <View 
+                      style={[
+                        styles.moodBar, 
+                        { 
+                          height: `${value * 10}%`,
+                          backgroundColor: value <= 3 ? colors.statusRed : value <= 5 ? colors.statusYellow : colors.statusGreen
+                        }
+                      ]} 
+                    />
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
-        </View>
+        ) : (
+          <View style={styles.emptyStateCard}>
+            <Ionicons name="person-add-outline" size={48} color={colors.textMuted} />
+            <Text style={styles.emptyStateTitle}>No patient linked yet</Text>
+            <Text style={styles.emptyStateText}>
+              Ask your loved one to share their Bloom Code with you to connect.
+            </Text>
+            <TouchableOpacity 
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('LinkPatient')}
+            >
+              <Ionicons name="link-outline" size={20} color={colors.text} />
+              <Text style={styles.linkButtonText}>Link with Patient</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.burnoutCard}>
           <View style={styles.burnoutHeader}>
@@ -151,8 +174,8 @@ export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ naviga
               onPress={() => navigation.navigate('SafetyContract')}
             >
               <Ionicons name="document-text-outline" size={28} color={colors.cardTherapist} />
-              <Text style={styles.actionLabel}>Contract</Text>
-              <Text style={styles.actionHint}>Safety plan</Text>
+              <Text style={styles.actionLabel}>Safety Plan</Text>
+              <Text style={styles.actionHint}>View agreements</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -402,6 +425,39 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     ...typography.body,
     color: colors.crisis,
+    fontWeight: '600',
+  },
+  emptyStateCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyStateTitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+  },
+  linkButtonText: {
+    ...typography.body,
+    color: colors.text,
     fontWeight: '600',
   },
 });

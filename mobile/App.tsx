@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from './src/store/useStore';
 import { colors } from './src/constants/theme';
 
-import { RoleGateScreen } from './src/screens/RoleGateScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { PatientHomeScreen } from './src/screens/patient/PatientHomeScreen';
 import { PatientToolsScreen } from './src/screens/patient/PatientToolsScreen';
 import { PatientTeamScreen } from './src/screens/patient/PatientTeamScreen';
@@ -188,8 +188,8 @@ export default function App() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {!isAuthenticated && !selectedRole ? (
-          <Stack.Screen name="RoleGate" component={RoleGateScreen} />
+        {!isAuthenticated ? (
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : (
           <Stack.Screen name="Main" component={MainNavigator} />
         )}

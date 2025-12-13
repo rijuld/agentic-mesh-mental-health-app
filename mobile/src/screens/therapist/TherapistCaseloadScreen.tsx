@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
 import { useStore } from '../../store/useStore';
+import { databaseService } from '../../services/databaseService';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Patient {
   id: string;
@@ -26,7 +30,55 @@ interface TherapistCaseloadScreenProps {
 }
 
 export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = ({ navigation }) => {
-  const { logout } = useStore();
+  const { user, logout, linkedAccounts, loadLinkedAccounts, connectionRequests, loadConnectionRequests, sendConnectionRequest, acceptConnectionRequest, rejectConnectionRequest } = useStore();
+  const [allPatients, setAllPatients] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingSent, setPendingSent] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    loadLinkedAccounts();
+    loadConnectionRequests();
+    loadAllPatients();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadLinkedAccounts();
+      loadConnectionRequests();
+      loadAllPatients();
+    }, [])
+  );
+
+  const loadAllPatients = async () => {
+    setIsLoading(true);
+    try {
+      const patients = await databaseService.getAllUsersByRole('patient');
+      setAllPatients(patients);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendRequest = async (patientId: string) => {
+    const success = await sendConnectionRequest(patientId, 'patient');
+    if (success) {
+      setPendingSent(prev => new Set(prev).add(patientId));
+      Alert.alert('Request Sent', 'Connection request sent to patient!');
+    } else {
+      Alert.alert('Error', 'Failed to send request.');
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string, fromUserId: string) => {
+    await acceptConnectionRequest(requestId, fromUserId);
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    await rejectConnectionRequest(requestId);
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -39,12 +91,17 @@ export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = (
     );
   };
 
-  const patients: Patient[] = [
-    { id: '1', name: 'Patient A', riskLevel: 'high', lastActivity: '2h ago', recentMood: 3, alerts: 2 },
-    { id: '2', name: 'Patient B', riskLevel: 'moderate', lastActivity: '5h ago', recentMood: 5, alerts: 1 },
-    { id: '3', name: 'Patient C', riskLevel: 'low', lastActivity: '1d ago', recentMood: 7, alerts: 0 },
-    { id: '4', name: 'Patient D', riskLevel: 'low', lastActivity: '3h ago', recentMood: 6, alerts: 0 },
-  ];
+  // Convert linked accounts to patient list format
+  const patients: Patient[] = linkedAccounts
+    .filter(acc => acc.role === 'patient')
+    .map((acc, index) => ({
+      id: acc.id,
+      name: `Patient ${index + 1}`,
+      riskLevel: 'low' as const,
+      lastActivity: 'Recently',
+      recentMood: 5,
+      alerts: 0,
+    }));
 
   const sortedPatients = [...patients].sort((a, b) => {
     const riskOrder = { high: 0, moderate: 1, low: 2 };
@@ -74,9 +131,50 @@ export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = (
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Caseload</Text>
-          <Text style={styles.subtitle}>{patients.length} active patients</Text>
+          <Text style={styles.subtitle}>{patients.length} active patient{patients.length !== 1 ? 's' : ''}</Text>
         </View>
 
+        {connectionRequests.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Connection Requests</Text>
+            {connectionRequests.map((request) => (
+              <View key={request.id} style={styles.requestCard}>
+                <View style={[styles.avatar, { backgroundColor: colors.cardPatient }]}>
+                  <Ionicons name="person" size={24} color={colors.text} />
+                </View>
+                <View style={styles.patientInfo}>
+                  <Text style={styles.patientName}>Patient</Text>
+                  <Text style={styles.patientMeta}>Wants to connect</Text>
+                </View>
+                <View style={styles.requestActions}>
+                  <TouchableOpacity 
+                    style={styles.acceptButton}
+                    onPress={() => handleAcceptRequest(request.id, request.fromUserId)}
+                  >
+                    <Ionicons name="checkmark" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.rejectButton}
+                    onPress={() => handleRejectRequest(request.id)}
+                  >
+                    <Ionicons name="close" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {patients.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="people-outline" size={64} color={colors.textMuted} />
+            <Text style={styles.emptyStateTitle}>No patients yet</Text>
+            <Text style={styles.emptyStateText}>
+              Search for patients below to send connection requests.
+            </Text>
+          </View>
+        ) : (
+          <>
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { borderLeftColor: colors.statusRed }]}>
             <Text style={styles.statNumber}>
@@ -136,13 +234,18 @@ export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = (
           ))}
         </View>
 
-        <TouchableOpacity 
-          style={styles.addPatientButton}
-          onPress={() => navigation.navigate('LinkPatient')}
-        >
-          <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-          <Text style={styles.addPatientText}>Link New Patient</Text>
-        </TouchableOpacity>
+          </>
+        )}
+
+        {patients.length > 0 && (
+          <TouchableOpacity 
+            style={styles.addPatientButton}
+            onPress={() => navigation.navigate('LinkPatient')}
+          >
+            <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+            <Text style={styles.addPatientText}>Link New Patient</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={colors.crisis} />
@@ -207,6 +310,39 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.h3,
     color: colors.text,
+    marginBottom: spacing.md,
+  },
+  requestCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  requestActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  acceptButton: {
+    backgroundColor: colors.success,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  rejectButton: {
+    backgroundColor: colors.crisis,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   sortLabel: {
     ...typography.caption,
@@ -288,6 +424,37 @@ const styles = StyleSheet.create({
   addPatientText: {
     ...typography.body,
     color: colors.primary,
+    fontWeight: '600',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyStateTitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+  },
+  linkButtonText: {
+    ...typography.body,
+    color: colors.text,
     fontWeight: '600',
   },
   logoutButton: {

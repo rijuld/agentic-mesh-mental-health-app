@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
 import { agentService } from '../../services/agentService';
+import { useStore } from '../../store/useStore';
+import { databaseService } from '../../services/databaseService';
+import { MoodLog } from '../../types';
 
 interface TherapistDataStreamScreenProps {
   navigation: any;
@@ -20,49 +23,58 @@ interface TherapistDataStreamScreenProps {
 export const TherapistDataStreamScreen: React.FC<TherapistDataStreamScreenProps> = ({ navigation, route }) => {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const patientId = route?.params?.patientId || '1';
+  const [moodLogs, setMoodLogs] = useState<MoodLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { linkedAccounts } = useStore();
+  
+  const patientId = route?.params?.patientId;
+  const patientIndex = linkedAccounts.filter(a => a.role === 'patient').findIndex(a => a.id === patientId);
+  const patientName = patientId ? `Patient ${patientIndex + 1}` : 'Patient';
 
-  const mockPatientData = {
-    name: 'Patient A',
-    moodLogs: [
-      { date: 'Mon', level: 4, note: 'Difficult morning' },
-      { date: 'Tue', level: 3, note: 'Urge to self-harm (Level 8)' },
-      { date: 'Wed', level: 5, note: 'Used TIPP successfully' },
-      { date: 'Thu', level: 6, note: 'Good therapy session' },
-      { date: 'Fri', level: 5, note: 'Conflict with partner' },
-    ],
-    crisisEvents: [
-      { date: 'Tuesday', distressLevel: 8, intervention: 'Cold Water', successful: true },
-    ],
-    skillsUsed: ['TIPP', 'Opposite Action', 'Check the Facts'],
-    journalThemes: ['abandonment fears', 'relationship conflict', 'work stress'],
+  useEffect(() => {
+    const loadPatientData = async () => {
+      if (!patientId) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const logs = await databaseService.getMoodLogs(patientId, 7);
+        setMoodLogs(logs);
+      } catch (error) {
+        console.error('Error loading patient data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPatientData();
+  }, [patientId]);
+
+  const getDayName = (timestamp: string) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[new Date(timestamp).getDay()];
   };
 
   const handleGenerateSummary = async () => {
+    if (!patientId) return;
     setIsGeneratingSummary(true);
     try {
       const response = await agentService.getClinicalSummary(patientId, 'past_week');
       if (response.success && response.response) {
         setAiSummary(response.response);
       } else {
-        setAiSummary(`Patient Status Summary: ${mockPatientData.name} reported elevated distress levels this week, peaking at Level 8 on Tuesday with urges to self-harm. The "Cold Water" intervention was successfully applied.
-
-Risk Assessment: MODERATE - Recent self-harm urges require monitoring, though patient demonstrated effective skill usage.
-
-Notable Patterns:
-- Mood fluctuated between 3-6 this week
-- Crisis event on Tuesday resolved with TIPP technique
-- Recurring themes: abandonment fears, relationship conflict
-
-Recommended Interventions:
-- Review safety plan with patient
-- Focus on interpersonal effectiveness skills
-- Consider increasing session frequency temporarily
-
-Urgent Flags: Monitor for escalation of self-harm urges.`);
+        // Generate summary based on actual mood logs if available
+        if (moodLogs.length > 0) {
+          const avgMood = moodLogs.reduce((sum, log) => sum + log.level, 0) / moodLogs.length;
+          const minMood = Math.min(...moodLogs.map(l => l.level));
+          const maxMood = Math.max(...moodLogs.map(l => l.level));
+          setAiSummary(`Patient Status Summary: ${patientName}\n\nMood Range: ${minMood}-${maxMood}/10 (Average: ${avgMood.toFixed(1)})\n\nRecent mood logs show ${moodLogs.length} entries this week.\n\nClick Generate again after more data is available for a detailed AI analysis.`);
+        } else {
+          setAiSummary('No mood data available yet. The patient has not logged any moods.');
+        }
       }
     } catch (error) {
       console.error('Summary generation error:', error);
+      setAiSummary('Unable to generate summary. Please try again later.');
     } finally {
       setIsGeneratingSummary(false);
     }
@@ -76,10 +88,24 @@ Urgent Flags: Monitor for escalation of self-harm urges.`);
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>{mockPatientData.name}</Text>
+            <Text style={styles.title}>{patientName}</Text>
             <Text style={styles.subtitle}>Data Stream</Text>
           </View>
         </View>
+
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading patient data...</Text>
+          </View>
+        ) : !patientId ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
+            <Text style={styles.emptyStateTitle}>No Patient Selected</Text>
+            <Text style={styles.emptyStateText}>Select a patient from your caseload to view their data.</Text>
+          </View>
+        ) : (
+          <>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -116,70 +142,44 @@ Urgent Flags: Monitor for escalation of self-harm urges.`);
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mood Log (This Week)</Text>
-          <View style={styles.moodLogCard}>
-            {mockPatientData.moodLogs.map((log, index) => (
-              <View key={index} style={styles.moodLogItem}>
-                <Text style={styles.moodLogDay}>{log.date}</Text>
-                <View style={styles.moodLogBar}>
-                  <View 
-                    style={[
-                      styles.moodLogFill, 
-                      { 
-                        width: `${log.level * 10}%`,
-                        backgroundColor: log.level <= 3 ? colors.statusRed : log.level <= 5 ? colors.statusYellow : colors.statusGreen
-                      }
-                    ]} 
-                  />
+          {moodLogs.length > 0 ? (
+            <View style={styles.moodLogCard}>
+              {moodLogs.map((log, index) => (
+                <View key={log.id || index} style={styles.moodLogItem}>
+                  <Text style={styles.moodLogDay}>{getDayName(log.timestamp)}</Text>
+                  <View style={styles.moodLogBar}>
+                    <View 
+                      style={[
+                        styles.moodLogFill, 
+                        { 
+                          width: `${log.level * 10}%`,
+                          backgroundColor: log.level <= 3 ? colors.statusRed : log.level <= 5 ? colors.statusYellow : colors.statusGreen
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.moodLogLevel}>{log.level}</Text>
+                  <Text style={styles.moodLogNote} numberOfLines={1}>{log.note || '-'}</Text>
                 </View>
-                <Text style={styles.moodLogLevel}>{log.level}</Text>
-                <Text style={styles.moodLogNote} numberOfLines={1}>{log.note}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Crisis Events</Text>
-          {mockPatientData.crisisEvents.map((event, index) => (
-            <View key={index} style={styles.crisisCard}>
-              <View style={styles.crisisHeader}>
-                <Ionicons name="alert-circle" size={20} color={colors.crisis} />
-                <Text style={styles.crisisDate}>{event.date}</Text>
-                <View style={[styles.successBadge, { backgroundColor: event.successful ? colors.success + '20' : colors.crisis + '20' }]}>
-                  <Text style={[styles.successBadgeText, { color: event.successful ? colors.success : colors.crisis }]}>
-                    {event.successful ? 'Resolved' : 'Ongoing'}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.crisisDetail}>
-                Distress Level: {event.distressLevel}/10 • Intervention: {event.intervention}
-              </Text>
+              ))}
             </View>
-          ))}
+          ) : (
+            <View style={styles.noDataCard}>
+              <Ionicons name="analytics-outline" size={24} color={colors.textMuted} />
+              <Text style={styles.noDataText}>No mood logs recorded yet</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skills Used</Text>
-          <View style={styles.skillsRow}>
-            {mockPatientData.skillsUsed.map((skill, index) => (
-              <View key={index} style={styles.skillChip}>
-                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                <Text style={styles.skillChipText}>{skill}</Text>
-              </View>
-            ))}
+          <Text style={styles.sectionTitle}>Patient Notes</Text>
+          <View style={styles.noDataCard}>
+            <Ionicons name="document-text-outline" size={24} color={colors.textMuted} />
+            <Text style={styles.noDataText}>Notes will appear here as data is collected</Text>
           </View>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Journal Themes</Text>
-          <View style={styles.themesRow}>
-            {mockPatientData.journalThemes.map((theme, index) => (
-              <View key={index} style={styles.themeChip}>
-                <Text style={styles.themeChipText}>{theme}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -367,5 +367,42 @@ const styles = StyleSheet.create({
   themeChipText: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyStateTitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  noDataCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  noDataText: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
 });

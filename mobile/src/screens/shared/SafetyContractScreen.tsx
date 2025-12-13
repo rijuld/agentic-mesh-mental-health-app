@@ -18,42 +18,7 @@ interface SafetyContractScreenProps {
 export const SafetyContractScreen: React.FC<SafetyContractScreenProps> = ({ navigation }) => {
   const { user, safetyContract } = useStore();
 
-  const mockContract = safetyContract || {
-    id: '1',
-    patientId: 'patient-1',
-    allyId: 'ally-1',
-    therapistId: 'therapist-1',
-    terms: [
-      {
-        id: '1',
-        condition: 'If Patient reaches Distress Level 9',
-        action: 'Ally will call Dr. Smith immediately',
-        responsibleParty: 'ally',
-      },
-      {
-        id: '2',
-        condition: 'If Patient does not respond for 4 hours during crisis',
-        action: 'Ally will call 911',
-        responsibleParty: 'ally',
-      },
-      {
-        id: '3',
-        condition: 'If Patient experiences urges to self-harm',
-        action: 'Patient will use TIPP skills and notify Ally',
-        responsibleParty: 'patient',
-      },
-      {
-        id: '4',
-        condition: 'Weekly check-in',
-        action: 'Therapist will review mood logs and adjust treatment plan',
-        responsibleParty: 'therapist',
-      },
-    ],
-    signedByPatient: true,
-    signedByAlly: true,
-    signedByTherapist: true,
-    lastUpdated: '2024-01-15',
-  };
+  const contract = safetyContract;
 
   const getPartyColor = (party: string) => {
     switch (party) {
@@ -80,97 +45,116 @@ export const SafetyContractScreen: React.FC<SafetyContractScreenProps> = ({ navi
           <View style={styles.headerIcon}>
             <Ionicons name="document-text" size={32} color={colors.primary} />
           </View>
-          <Text style={styles.title}>Safety Contract</Text>
+          <Text style={styles.title}>Safety Plan</Text>
           <Text style={styles.subtitle}>
             A shared agreement between all parties in the recovery journey
           </Text>
         </View>
 
-        <View style={styles.signaturesCard}>
-          <Text style={styles.signaturesTitle}>Signatures</Text>
-          <View style={styles.signaturesRow}>
-            <View style={styles.signatureItem}>
-              <View style={[styles.signatureIcon, { backgroundColor: colors.cardPatient }]}>
-                {mockContract.signedByPatient ? (
-                  <Ionicons name="checkmark" size={16} color={colors.text} />
-                ) : (
-                  <Ionicons name="time-outline" size={16} color={colors.text} />
-                )}
+        {contract ? (
+          <>
+            <View style={styles.signaturesCard}>
+              <Text style={styles.signaturesTitle}>Signatures</Text>
+              <View style={styles.signaturesRow}>
+                <View style={styles.signatureItem}>
+                  <View style={[styles.signatureIcon, { backgroundColor: colors.cardPatient }]}>
+                    {contract.signedByPatient ? (
+                      <Ionicons name="checkmark" size={16} color={colors.text} />
+                    ) : (
+                      <Ionicons name="time-outline" size={16} color={colors.text} />
+                    )}
+                  </View>
+                  <Text style={styles.signatureLabel}>Patient</Text>
+                </View>
+                
+                <View style={styles.signatureItem}>
+                  <View style={[styles.signatureIcon, { backgroundColor: colors.cardAlly }]}>
+                    {contract.signedByAlly ? (
+                      <Ionicons name="checkmark" size={16} color={colors.text} />
+                    ) : (
+                      <Ionicons name="time-outline" size={16} color={colors.text} />
+                    )}
+                  </View>
+                  <Text style={styles.signatureLabel}>Ally</Text>
+                </View>
+                
+                <View style={styles.signatureItem}>
+                  <View style={[styles.signatureIcon, { backgroundColor: colors.cardTherapist }]}>
+                    {contract.signedByTherapist ? (
+                      <Ionicons name="checkmark" size={16} color={colors.text} />
+                    ) : (
+                      <Ionicons name="time-outline" size={16} color={colors.text} />
+                    )}
+                  </View>
+                  <Text style={styles.signatureLabel}>Therapist</Text>
+                </View>
               </View>
-              <Text style={styles.signatureLabel}>Patient</Text>
+              <Text style={styles.lastUpdated}>Last updated: {contract.lastUpdated}</Text>
             </View>
-            
-            <View style={styles.signatureItem}>
-              <View style={[styles.signatureIcon, { backgroundColor: colors.cardAlly }]}>
-                {mockContract.signedByAlly ? (
-                  <Ionicons name="checkmark" size={16} color={colors.text} />
-                ) : (
-                  <Ionicons name="time-outline" size={16} color={colors.text} />
-                )}
-              </View>
-              <Text style={styles.signatureLabel}>Ally</Text>
-            </View>
-            
-            <View style={styles.signatureItem}>
-              <View style={[styles.signatureIcon, { backgroundColor: colors.cardTherapist }]}>
-                {mockContract.signedByTherapist ? (
-                  <Ionicons name="checkmark" size={16} color={colors.text} />
-                ) : (
-                  <Ionicons name="time-outline" size={16} color={colors.text} />
-                )}
-              </View>
-              <Text style={styles.signatureLabel}>Therapist</Text>
-            </View>
-          </View>
-          <Text style={styles.lastUpdated}>Last updated: {mockContract.lastUpdated}</Text>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Agreement Terms</Text>
-          
-          {mockContract.terms.map((term, index) => (
-            <View key={term.id} style={styles.termCard}>
-              <View style={styles.termHeader}>
-                <View style={styles.termNumber}>
-                  <Text style={styles.termNumberText}>{index + 1}</Text>
-                </View>
-                <View style={[styles.partyBadge, { backgroundColor: getPartyColor(term.responsibleParty) + '20' }]}>
-                  <Text style={[styles.partyBadgeText, { color: getPartyColor(term.responsibleParty) }]}>
-                    {getPartyLabel(term.responsibleParty)}
-                  </Text>
-                </View>
-              </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Agreement Terms</Text>
               
-              <View style={styles.termContent}>
-                <Text style={styles.termCondition}>
-                  <Text style={styles.termLabel}>IF: </Text>
-                  {term.condition}
-                </Text>
-                <Text style={styles.termAction}>
-                  <Text style={styles.termLabel}>THEN: </Text>
-                  {term.action}
+              {contract.terms.map((term, index) => (
+                <View key={term.id} style={styles.termCard}>
+                  <View style={styles.termHeader}>
+                    <View style={styles.termNumber}>
+                      <Text style={styles.termNumberText}>{index + 1}</Text>
+                    </View>
+                    <View style={[styles.partyBadge, { backgroundColor: getPartyColor(term.responsibleParty) + '20' }]}>
+                      <Text style={[styles.partyBadgeText, { color: getPartyColor(term.responsibleParty) }]}>
+                        {getPartyLabel(term.responsibleParty)}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.termContent}>
+                    <Text style={styles.termCondition}>
+                      <Text style={styles.termLabel}>IF: </Text>
+                      {term.condition}
+                    </Text>
+                    <Text style={styles.termAction}>
+                      <Text style={styles.termLabel}>THEN: </Text>
+                      {term.action}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.infoCard}>
+              <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoTitle}>Editing the Plan</Text>
+                <Text style={styles.infoText}>
+                  This plan can only be modified when all three parties agree. 
+                  Changes require biometric authentication from each party.
                 </Text>
               </View>
             </View>
-          ))}
-        </View>
 
-        <View style={styles.infoCard}>
-          <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
-          <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Editing the Contract</Text>
-            <Text style={styles.infoText}>
-              This contract can only be modified when all three parties agree. 
-              Changes require biometric authentication from each party.
+            {user?.role === 'patient' && (
+              <TouchableOpacity style={styles.requestEditButton}>
+                <Ionicons name="create-outline" size={20} color={colors.primary} />
+                <Text style={styles.requestEditText}>Request Plan Edit</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={64} color={colors.textMuted} />
+            <Text style={styles.emptyStateTitle}>No Safety Plan Yet</Text>
+            <Text style={styles.emptyStateText}>
+              A safety plan helps coordinate care between you, your ally, and your therapist. 
+              Work with your care team to create one.
             </Text>
+            {user?.role === 'patient' && (
+              <TouchableOpacity style={styles.createButton}>
+                <Ionicons name="add-circle-outline" size={20} color={colors.text} />
+                <Text style={styles.createButtonText}>Create Safety Plan</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
-
-        {user?.role === 'patient' && (
-          <TouchableOpacity style={styles.requestEditButton}>
-            <Ionicons name="create-outline" size={20} color={colors.primary} />
-            <Text style={styles.requestEditText}>Request Contract Edit</Text>
-          </TouchableOpacity>
         )}
 
         <View style={styles.emergencySection}>
@@ -390,5 +374,36 @@ const styles = StyleSheet.create({
   emergencyNumber: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyStateTitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.lg,
+  },
+  createButtonText: {
+    ...typography.body,
+    color: colors.text,
+    fontWeight: '600',
   },
 });

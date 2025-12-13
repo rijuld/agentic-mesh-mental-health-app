@@ -5,9 +5,9 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  anchorCode?: string;
+  bloomCode?: string;
   linkedPatientId?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface MoodLog {

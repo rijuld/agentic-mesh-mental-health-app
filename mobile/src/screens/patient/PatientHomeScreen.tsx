@@ -155,7 +155,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
         onPress={() => navigation.navigate('Chat')}
       >
         <Ionicons name="chatbubble-ellipses" size={28} color={colors.text} />
-        <Text style={styles.fabLabel}>Talk to Anchor AI</Text>
+        <Text style={styles.fabLabel}>Talk to Sukoon</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -174,16 +174,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl * 3,
   },
   header: {
-    paddingTop: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingTop: spacing.xl,
+    marginBottom: spacing.xl,
   },
   greeting: {
-    ...typography.body,
+    ...typography.h3,
     color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   userName: {
-    ...typography.h2,
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.text,
+    lineHeight: 40,
   },
   moodCard: {
     backgroundColor: colors.surface,

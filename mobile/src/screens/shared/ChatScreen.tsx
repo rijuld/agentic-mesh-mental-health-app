@@ -29,10 +29,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
 
   const getAgentName = () => {
     switch (user?.role) {
-      case 'patient': return 'Anchor AI (DBT Coach)';
-      case 'ally': return 'Anchor AI (Support Guide)';
-      case 'therapist': return 'Anchor AI (Clinical Assistant)';
-      default: return 'Anchor AI';
+      case 'patient': return 'Sukoon Guide';
+      case 'ally': return 'Sukoon Companion';
+      case 'therapist': return 'Sukoon Clinical';
+      default: return 'Sukoon Guide';
     }
   };
 
@@ -105,7 +105,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
               <View style={styles.welcomeIcon}>
                 <Ionicons name="chatbubbles" size={48} color={colors.primary} />
               </View>
-              <Text style={styles.welcomeTitle}>Welcome to Anchor AI</Text>
+              <Text style={styles.welcomeTitle}>Welcome to Sukoon</Text>
               <Text style={styles.welcomeText}>
                 {user?.role === 'patient' && 
                   "I'm here to help you practice DBT skills and navigate difficult moments. How are you feeling today?"}
@@ -164,7 +164,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
               {message.role === 'assistant' && (
                 <View style={styles.assistantHeader}>
                   <Ionicons name="sparkles" size={14} color={colors.primary} />
-                  <Text style={styles.assistantLabel}>Anchor AI</Text>
+                  <Text style={styles.assistantLabel}>Sukoon</Text>
                 </View>
               )}
               <Text style={[
