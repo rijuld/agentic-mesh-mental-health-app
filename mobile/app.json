@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Anchor",
+    "slug": "anchor-bpd-recovery",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anchor.bpdrecovery"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.anchor.bpdrecovery"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
