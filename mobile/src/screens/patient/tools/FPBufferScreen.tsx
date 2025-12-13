@@ -231,7 +231,7 @@ export const FPBufferScreen = ({ navigation }: any) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.title}>FP Buffer</Text>
+                <Text style={styles.title}>Pause Before Sending</Text>
                 <View style={{ width: 24 }} />
             </View>
 

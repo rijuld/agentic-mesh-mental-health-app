@@ -161,7 +161,7 @@ export const PatientTeamScreen: React.FC<PatientTeamScreenProps> = ({ navigation
         >
           <Ionicons name="document-text-outline" size={24} color={colors.text} />
           <View style={styles.contractButtonContent}>
-            <Text style={styles.contractButtonTitle}>Safety Contract</Text>
+            <Text style={styles.contractButtonTitle}>Safety Plan</Text>
             <Text style={styles.contractButtonSubtitle}>View shared agreements</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

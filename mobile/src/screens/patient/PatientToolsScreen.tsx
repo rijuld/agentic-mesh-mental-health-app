@@ -53,23 +53,23 @@ export const PatientToolsScreen: React.FC<PatientToolsScreenProps> = ({ navigati
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Toolbox</Text>
-          <Text style={styles.subtitle}>Your DBT skills and support tools</Text>
+          <Text style={styles.subtitle}>Your calming tools and support</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tools</Text>
           
           <ToolCard
-            title="DBT Skills Library"
-            description="Access all DBT skills with audio guides"
+            title="Skills Library"
+            description="Explore coping skills and quick guides"
             icon="library-outline"
             color={colors.primary}
             onPress={() => navigation.navigate('SkillsLibrary')}
           />
 
           <ToolCard
-            title="FP Buffer"
-            description="Delay-send SMS simulator for emotional messages"
+            title="Pause Before Sending"
+            description="Give yourself time before sending an emotional message"
             icon="time-outline"
             color={colors.warning}
             onPress={() => navigation.navigate('FPBuffer')}

@@ -47,7 +47,11 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
     <SafeAreaView style={styles.container}>
       <CrisisButton />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.userName}>{user?.name || 'Friend'}</Text>
@@ -132,7 +136,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
               onPress={() => navigation.navigate('FPBuffer')}
             >
               <Ionicons name="time-outline" size={28} color={colors.warning} />
-              <Text style={styles.actionLabel}>FP Buffer</Text>
+              <Text style={styles.actionLabel}>Pause Before Sending</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -140,7 +144,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
               onPress={() => navigation.navigate('SafetyContract')}
             >
               <Ionicons name="document-text-outline" size={28} color={colors.cardTherapist} />
-              <Text style={styles.actionLabel}>Contract</Text>
+              <Text style={styles.actionLabel}>Safety Plan</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,6 +169,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xxl * 3,
   },
   header: {
     paddingTop: spacing.lg,
