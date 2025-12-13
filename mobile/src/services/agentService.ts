@@ -9,6 +9,15 @@ const AGENT_ENDPOINTS = {
   router: 'https://jcjq4yrw6y2ywsllgap457rd.agents.do-ai.run',
 };
 
+// Access keys for each agent
+const AGENT_ACCESS_KEYS = {
+  translator: '1YbHqH2vszbSSpZp4qiHZWXI8JV4CwdL',
+  mentalization: 'u1aNEktdYPHopYQ0rbzGuyd7rT3gvGT1',
+  fpBuffer: 'kmFGeP_SGKol1TNmk_T7rd9eZS5AC9gh',
+  validation: 'GpAZHulmXBbawBGpUPcR6vwEzbNGb39n',
+  router: '3KTvPKrDHTv_dkrb_VwcYd9x-1VEAcSH',
+};
+
 export type AgentType = 
   | 'translator'
   | 'mentalization'
@@ -47,11 +56,20 @@ const AGENT_TYPE_TO_ENDPOINT: Record<AgentType, string> = {
   router: AGENT_ENDPOINTS.router,
 };
 
+const AGENT_TYPE_TO_KEY: Record<AgentType, string> = {
+  translator: AGENT_ACCESS_KEYS.translator,
+  mentalization: AGENT_ACCESS_KEYS.mentalization,
+  fp_buffer: AGENT_ACCESS_KEYS.fpBuffer,
+  validation: AGENT_ACCESS_KEYS.validation,
+  router: AGENT_ACCESS_KEYS.router,
+};
+
 class AgentService {
   private conversationHistory: ChatMessage[] = [];
 
   private async callDOAgent(
     endpoint: string,
+    accessKey: string,
     message: string,
     conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<DOAgentResponse> {
@@ -60,19 +78,32 @@ class AgentService {
       { role: 'user', content: message }
     ];
 
-    const response = await fetch(`${endpoint}/api/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages,
-        stream: false,
-        include_retrieval_info: false,
-      }),
-    });
+    try {
+      const response = await fetch(`${endpoint}/api/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessKey}`,
+        },
+        body: JSON.stringify({
+          messages,
+          stream: false,
+          include_retrieval_info: false,
+        }),
+      });
 
-    return await response.json();
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Agent API error:', response.status, data);
+        return { error: data.detail || `HTTP ${response.status}` };
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Agent fetch error:', error);
+      return { error: error instanceof Error ? error.message : 'Network error' };
+    }
   }
 
   async chatWithAgent(
@@ -81,12 +112,13 @@ class AgentService {
   ): Promise<AgentResponse> {
     try {
       const endpoint = AGENT_TYPE_TO_ENDPOINT[agentType];
+      const accessKey = AGENT_TYPE_TO_KEY[agentType];
       const history = this.conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content,
       }));
 
-      const data = await this.callDOAgent(endpoint, message, history);
+      const data = await this.callDOAgent(endpoint, accessKey, message, history);
       
       const responseContent = data.choices?.[0]?.message?.content;
       

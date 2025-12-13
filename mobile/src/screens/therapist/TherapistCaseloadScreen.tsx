@@ -6,9 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
+import { useStore } from '../../store/useStore';
 
 interface Patient {
   id: string;
@@ -24,6 +26,19 @@ interface TherapistCaseloadScreenProps {
 }
 
 export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = ({ navigation }) => {
+  const { logout } = useStore();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log Out', style: 'destructive', onPress: () => logout() },
+      ]
+    );
+  };
+
   const patients: Patient[] = [
     { id: '1', name: 'Patient A', riskLevel: 'high', lastActivity: '2h ago', recentMood: 3, alerts: 2 },
     { id: '2', name: 'Patient B', riskLevel: 'moderate', lastActivity: '5h ago', recentMood: 5, alerts: 1 },
@@ -127,6 +142,11 @@ export const TherapistCaseloadScreen: React.FC<TherapistCaseloadScreenProps> = (
         >
           <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
           <Text style={styles.addPatientText}>Link New Patient</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={colors.crisis} />
+          <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -268,6 +288,23 @@ const styles = StyleSheet.create({
   addPatientText: {
     ...typography.body,
     color: colors.primary,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xxl,
+    borderWidth: 1,
+    borderColor: colors.crisis,
+  },
+  logoutButtonText: {
+    ...typography.body,
+    color: colors.crisis,
     fontWeight: '600',
   },
 });

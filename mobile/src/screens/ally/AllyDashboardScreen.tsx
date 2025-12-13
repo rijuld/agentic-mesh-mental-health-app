@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../../constants/theme';
@@ -16,7 +17,18 @@ interface AllyDashboardScreenProps {
 }
 
 export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ navigation }) => {
-  const { linkedPatientStatus } = useStore();
+  const { linkedPatientStatus, logout } = useStore();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log Out', style: 'destructive', onPress: () => logout() },
+      ]
+    );
+  };
 
   const getStatusColor = (level: string) => {
     switch (level) {
@@ -161,6 +173,11 @@ export const AllyDashboardScreen: React.FC<AllyDashboardScreenProps> = ({ naviga
             <Text style={styles.emergencySubtitle}>Quick access to crisis resources</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={colors.crisis} />
+          <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -369,5 +386,22 @@ const styles = StyleSheet.create({
   emergencySubtitle: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xxl,
+    borderWidth: 1,
+    borderColor: colors.crisis,
+  },
+  logoutButtonText: {
+    ...typography.body,
+    color: colors.crisis,
+    fontWeight: '600',
   },
 });

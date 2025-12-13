@@ -53,8 +53,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
     try {
       const response = await agentService.chatWithRole(
         user?.role || 'patient',
-        inputText.trim(),
-        { mood_level: currentMood }
+        inputText.trim()
       );
 
       if (response.success && response.response) {

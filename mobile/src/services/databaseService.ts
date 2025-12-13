@@ -1,6 +1,6 @@
 import { User, MoodLog, SafetyContract, ShareSettings } from '../types';
 
-const MONGODB_API_URL = 'https://data.mongodb-api.com/app/data-api/endpoint/data/v1';
+const MONGODB_API_URL = 'http://localhost:3000';
 const CLUSTER_NAME = 'Cluster0';
 const DATABASE_NAME = 'bpd_recovery';
 
@@ -37,7 +37,6 @@ class DatabaseService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': this.apiKey,
       },
       body: JSON.stringify({
         dataSource: CLUSTER_NAME,
@@ -139,7 +138,7 @@ class DatabaseService {
 
   async generateAnchorCode(userId: string): Promise<string> {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
+
     try {
       await this.makeRequest('insertOne', COLLECTIONS.anchorCodes, {
         document: {

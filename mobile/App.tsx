@@ -14,10 +14,22 @@ import { PatientToolsScreen } from './src/screens/patient/PatientToolsScreen';
 import { PatientTeamScreen } from './src/screens/patient/PatientTeamScreen';
 import { AllyDashboardScreen } from './src/screens/ally/AllyDashboardScreen';
 import { AllyTranslatorScreen } from './src/screens/ally/AllyTranslatorScreen';
+import { AllyLearnScreen } from './src/screens/ally/AllyLearnScreen';
+
+// ... (existing imports, but for ReplaceContent we need contiguous block. 
+// I will just add the import at the top and the screen in the function separately? 
+// No, I can't do multiple discontinuous edits with replace_file_content unless I use multi_replace.
+// I will use multi_replace to be safe and efficient.)
 import { TherapistCaseloadScreen } from './src/screens/therapist/TherapistCaseloadScreen';
+import { LinkPatientScreen } from './src/screens/therapist/LinkPatientScreen';
 import { TherapistDataStreamScreen } from './src/screens/therapist/TherapistDataStreamScreen';
 import { SafetyContractScreen } from './src/screens/shared/SafetyContractScreen';
 import { ChatScreen } from './src/screens/shared/ChatScreen';
+import { SkillsLibraryScreen } from './src/screens/patient/tools/SkillsLibraryScreen';
+import { SkillDetailScreen } from './src/screens/patient/tools/SkillDetailScreen';
+import { JournalScreen } from './src/screens/patient/tools/JournalScreen';
+import { FPBufferScreen } from './src/screens/patient/tools/FPBufferScreen';
+import { MentalizationMirrorScreen } from './src/screens/patient/tools/MentalizationMirrorScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,7 +40,7 @@ function PatientTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
-          
+
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Tools') {
@@ -38,7 +50,7 @@ function PatientTabs() {
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
-          
+
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.primary,
@@ -63,7 +75,7 @@ function AllyTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
-          
+
           if (route.name === 'Dashboard') {
             iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'Translator') {
@@ -71,7 +83,7 @@ function AllyTabs() {
           } else if (route.name === 'Learn') {
             iconName = focused ? 'book' : 'book-outline';
           }
-          
+
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.cardAlly,
@@ -85,6 +97,7 @@ function AllyTabs() {
     >
       <Tab.Screen name="Dashboard" component={AllyDashboardScreen} />
       <Tab.Screen name="Translator" component={AllyTranslatorScreen} />
+      <Tab.Screen name="Learn" component={AllyLearnScreen} />
     </Tab.Navigator>
   );
 }
@@ -95,7 +108,7 @@ function TherapistTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
-          
+
           if (route.name === 'Caseload') {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'DataStream') {
@@ -103,7 +116,7 @@ function TherapistTabs() {
           } else if (route.name === 'Interventions') {
             iconName = focused ? 'notifications' : 'notifications-outline';
           }
-          
+
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: colors.cardTherapist,
@@ -116,8 +129,8 @@ function TherapistTabs() {
       })}
     >
       <Tab.Screen name="Caseload" component={TherapistCaseloadScreen} />
-      <Tab.Screen 
-        name="DataStream" 
+      <Tab.Screen
+        name="DataStream"
         component={TherapistDataStreamScreen}
         options={{ tabBarLabel: 'Data' }}
       />
@@ -127,7 +140,7 @@ function TherapistTabs() {
 
 function MainNavigator() {
   const { user, selectedRole } = useStore();
-  
+
   const getMainScreen = () => {
     const role = user?.role || selectedRole;
     switch (role) {
@@ -153,6 +166,12 @@ function MainNavigator() {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="SafetyContract" component={SafetyContractScreen} />
       <Stack.Screen name="PatientDetail" component={TherapistDataStreamScreen} />
+      <Stack.Screen name="LinkPatient" component={LinkPatientScreen} />
+      <Stack.Screen name="SkillsLibrary" component={SkillsLibraryScreen} />
+      <Stack.Screen name="SkillDetail" component={SkillDetailScreen} />
+      <Stack.Screen name="Journal" component={JournalScreen} />
+      <Stack.Screen name="FPBuffer" component={FPBufferScreen} />
+      <Stack.Screen name="MentalizationMirror" component={MentalizationMirrorScreen} />
     </Stack.Navigator>
   );
 }

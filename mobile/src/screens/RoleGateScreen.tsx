@@ -46,13 +46,12 @@ export const RoleGateScreen: React.FC<RoleGateScreenProps> = ({ navigation }) =>
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
-    navigation.navigate('Onboarding', { role });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-      
+
       <View style={styles.header}>
         <View style={styles.logoContainer}>
           <Ionicons name="anchor" size={48} color={colors.primary} />

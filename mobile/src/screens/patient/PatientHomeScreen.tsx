@@ -46,7 +46,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
   return (
     <SafeAreaView style={styles.container}>
       <CrisisButton />
-      
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.greeting}>Welcome back,</Text>
@@ -55,7 +55,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
 
         <View style={styles.moodCard}>
           <Text style={styles.moodQuestion}>How are you regulating right now?</Text>
-          
+
           <View style={styles.moodSliderContainer}>
             <View style={styles.moodLabels}>
               <Text style={styles.moodLabelText}>1</Text>
@@ -64,7 +64,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
               </Text>
               <Text style={styles.moodLabelText}>10</Text>
             </View>
-            
+
             <View style={styles.moodButtons}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                 <TouchableOpacity
@@ -98,7 +98,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
           <Text style={styles.dailySkillDescription}>
             When you feel an urge to act on an emotion, do the opposite of what the emotion tells you to do.
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.learnMoreButton}
             onPress={() => navigation.navigate('SkillDetail', { skillId: 'opposite-action' })}
           >
@@ -109,9 +109,9 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
 
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
+
           <View style={styles.actionGrid}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionCard}
               onPress={() => navigation.navigate('Journal')}
             >
@@ -119,15 +119,15 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
               <Text style={styles.actionLabel}>Journal</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => navigation.navigate('Skills')}
+              onPress={() => navigation.navigate('SkillsLibrary')}
             >
               <Ionicons name="library-outline" size={28} color={colors.secondary} />
               <Text style={styles.actionLabel}>Skills</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionCard}
               onPress={() => navigation.navigate('FPBuffer')}
             >
@@ -135,7 +135,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
               <Text style={styles.actionLabel}>FP Buffer</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionCard}
               onPress={() => navigation.navigate('SafetyContract')}
             >
@@ -146,7 +146,7 @@ export const PatientHomeScreen: React.FC<PatientHomeScreenProps> = ({ navigation
         </View>
       </ScrollView>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('Chat')}
       >

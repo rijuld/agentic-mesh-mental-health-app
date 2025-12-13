@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies
+**/node_modules/
+
+# Env files
+.env
+.env.*
+
+# Coverage
+coverage/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+web-build/
+
+# Metro
+.metro-health-check*
+
+# Build outputs
+**/dist/
+**/build/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.pem
