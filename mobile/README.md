@@ -25,15 +25,14 @@ The app provides three distinct experiences based on user role:
 
 ### Shared Features
 - **Safety Contract**: Digital agreement signed by all parties
-- **AI Chat**: Role-specific AI agents powered by Digital Ocean Gradient AI
+- **AI Chat**: Role-specific AI agents powered by DigitalOcean Gradient AI
 
 ## Tech Stack
 
 - **Frontend**: React Native with Expo
 - **State Management**: Zustand
 - **Navigation**: React Navigation
-- **Backend**: Python FastAPI (see `/backend`)
-- **AI**: Digital Ocean Gradient AI (5 specialized agents)
+- **AI**: DigitalOcean Gradient AI (5 specialized agents - direct API calls)
 
 ## Getting Started
 
@@ -64,16 +63,6 @@ npm run android
 npm run ios
 ```
 
-### Backend Setup
-
-```bash
-cd backend
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your Digital Ocean Gradient AI credentials
-uvicorn main:app --reload
-```
-
 ## Project Structure
 
 ```
@@ -100,42 +89,39 @@ mobile/
 │   │       ├── SafetyContractScreen.tsx
 │   │       └── ChatScreen.tsx
 │   ├── services/
-│   │   └── agentService.ts # API client for AI agents
+│   │   └── agentService.ts # Direct calls to DO Gradient AI agents
 │   ├── store/
 │   │   └── useStore.ts     # Zustand state management
 │   └── types/
 │       └── index.ts        # TypeScript types
-
-backend/
-├── agents/
-│   ├── __init__.py
-│   └── agent_handler.py    # Digital Ocean Gradient AI integration
-├── requirements.txt
-└── .env.example
 ```
 
-## AI Agents
+## AI Agents (DigitalOcean Gradient AI)
 
-The app uses 5 specialized AI agents:
+The app calls 5 specialized AI agents directly via their public endpoints:
 
-1. **Patient DBT Coach**: Validating, dialectical support for patients
-2. **Ally Conflict Resolution**: Message translation and de-escalation
-3. **Therapist Clinical Summary**: Clinical documentation assistance
-4. **Crisis Intervention**: Immediate safety-focused support
-5. **Mentalization Mirror**: Understanding mental states behind communications
+| Agent | Endpoint | Purpose |
+|-------|----------|---------|
+| **Translator** | `https://tw5vdfz2eujvx64lazljnghx.agents.do-ai.run` | Message translation & de-escalation for allies |
+| **Mentalization Mirror** | `https://ttyh5sguidqqq3ttoeuhlall.agents.do-ai.run` | Understanding mental states behind communications |
+| **FP Buffer** | `https://gc3n4w4xfrh6o7obid2vannh.agents.do-ai.run` | Favorite Person boundary support |
+| **Validation Agent** | `https://zt6nnlzy76kb4zjosupviqom.agents.do-ai.run` | Validating, dialectical support for patients |
+| **Router** | `https://jcjq4yrw6y2ywsllgap457rd.agents.do-ai.run` | Routes requests to appropriate agent/function |
 
-## Environment Variables
+### API Format
 
-Create a `.env` file in the backend directory:
+All agents use the DigitalOcean Gradient AI chat completions API:
 
-```env
-GRADIENT_AI_API_KEY=your_api_key
-GRADIENT_AI_WORKSPACE_ID=your_workspace_id
-AGENT_ID_PATIENT_DBT=your_agent_id
-AGENT_ID_ALLY=your_agent_id
-AGENT_ID_THERAPIST=your_agent_id
-AGENT_ID_CRISIS=your_agent_id
-AGENT_ID_MENTALIZATION=your_agent_id
+```typescript
+POST {endpoint}/api/v1/chat/completions
+Content-Type: application/json
+
+{
+  "messages": [
+    { "role": "user", "content": "Your message here" }
+  ],
+  "stream": false
+}
 ```
 
 ## Pairing Mechanism
