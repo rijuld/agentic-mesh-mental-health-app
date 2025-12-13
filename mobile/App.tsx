@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from './src/store/useStore';
 import { colors } from './src/constants/theme';
 
+import { WelcomeScreen } from './src/screens/WelcomeScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { PatientHomeScreen } from './src/screens/patient/PatientHomeScreen';
 import { PatientToolsScreen } from './src/screens/patient/PatientToolsScreen';
@@ -189,7 +191,11 @@ export default function App() {
         }}
       >
         {!isAuthenticated ? (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          </>
         ) : (
           <Stack.Screen name="Main" component={MainNavigator} />
         )}
