@@ -1,4 +1,4 @@
-# agentic-mesh-mental-health-app
+# Agentic Mesh - A mental health support application for all mental health needs
 <p align="center">
   ⚓ <strong>Anchor</strong> — BPD recovery companion for patients, allies, and clinicians 🤝
 </p>
