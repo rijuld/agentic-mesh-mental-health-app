@@ -4,7 +4,7 @@ import { User, MoodLog, SafetyContract, ShareSettings } from '../types';
 // For iOS simulator: http://localhost:3000
 // For Android emulator: http://10.0.2.2:3000
 // For physical device: http://<your-machine-ip>:3000
-const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://10.205.1.208:3000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
 const COLLECTIONS = {
   users: 'users',
