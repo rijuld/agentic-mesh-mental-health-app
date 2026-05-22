@@ -1,3 +1,4 @@
+# agentic-mesh-mental-health-app
 <p align="center">
   ⚓ <strong>Anchor</strong> — BPD recovery companion for patients, allies, and clinicians 🤝
 </p>
